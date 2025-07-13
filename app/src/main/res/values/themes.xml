@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Seeforme" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryContainer">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">@color/black</item>
+        <!-- Application background color. -->
+        <item name="android:windowBackground">@color/background</item>
+        <!-- Text color. -->
+        <item name="android:textColor">@color/text_primary</item>
+        <!-- Button styles. -->
+        <item name="materialButtonStyle">@style/Widget.App.Button</item>
+        <!-- Navigation bar color -->
+        <item name="android:navigationBarColor">@color/black</item>
+        <!-- Enable system window insets -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+
+    <!-- No Action Bar theme for Login -->
+    <style name="Theme.Seeforme.NoActionBar" parent="Theme.Seeforme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Custom button style with larger touch targets -->
+    <style name="Widget.App.Button" parent="Widget.Material3.Button">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+    
+    <!-- Dialog style for better visibility -->
+    <style name="Theme.App.DialogTheme" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="android:background">@color/background</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.App.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.App.Button</item>
+    </style>
+</resources>
