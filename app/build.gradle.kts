@@ -50,6 +50,23 @@ dependencies {
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.core:core-ktx:1.12.0")
     
+    // CameraX dependencies for real-time camera feed
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+    implementation("androidx.camera:camera-extensions:1.3.1")
+    
+    // TensorFlow Lite for on-device ML - Use basic TensorFlow Lite only
+    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.12.0") // GPU acceleration
+    
+    // Remove Task API for now - use basic TensorFlow Lite
+    // implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.2")
+    
+    // Image processing
+    implementation("androidx.camera:camera-mlkit-vision:1.3.0-beta02")
     // Preference
     implementation("androidx.preference:preference:1.2.1")
     
