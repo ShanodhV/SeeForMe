@@ -67,7 +67,6 @@ dependencies {
     
     // Image processing
     implementation("androidx.camera:camera-mlkit-vision:1.3.0-beta02")
-    
     // Preference
     implementation("androidx.preference:preference:1.2.1")
     
