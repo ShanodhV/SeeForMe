@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "878445999982",
+    "project_id": "see-for-me-app",
+    "storage_bucket": "see-for-me-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878445999982:android:f50eba30616604eacbf37f",
+        "android_client_info": {
+          "package_name": "com.shanodh.seeforme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "878445999982-tv12jn9ah4ld5cn5sprk3t8h69vg6k68.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shanodh.seeforme",
+            "certificate_hash": "21c7d55d933818096dc7d5a9c670d911603e33d3"
+          }
+        },
+        {
+          "client_id": "878445999982-tsil5od0plelba6kr2qhdvv0jbj72brm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXOnFRBcHLvjXUQv2s1OnrsQ-4btRkIwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "878445999982-tsil5od0plelba6kr2qhdvv0jbj72brm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

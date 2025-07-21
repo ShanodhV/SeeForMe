@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#667eea"
+        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Eye icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,35C44,35 35.47,41.56 31,50.5C35.47,59.44 44,66 54,66s18.53,-6.56 23,-15.5C72.53,41.56 64,35 54,35z" />
+    
+    <!-- Eye pupil -->
+    <path
+        android:fillColor="#667eea"
+        android:pathData="M54,42c-4.42,0 -8,3.58 -8,8s3.58,8 8,8s8,-3.58 8,-8S58.42,42 54,42z" />
+    
+    <!-- Voice waves -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"
+        android:pathData="M20,45h4v10h-4z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M26,42h3v16h-3z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"
+        android:pathData="M84,45h4v10h-4z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M79,42h3v16h-3z" />
+    
+</vector>

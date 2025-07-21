@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Focused state - brighter white -->
+    <item android:state_focused="true" android:color="#FFFFFF" />
+    <!-- Normal/inactive state - semi-transparent white -->
+    <item android:color="#80FFFFFF" />
+</selector>

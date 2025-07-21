@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeeForMe AI Vision</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@latest"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        #videoElement {
+            width: 100%;
+            max-width: 320px;
+            height: 240px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #333;
+            font-size: 18px;
+        }
+        
+        .detection-results {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #1a1a2e;
+            min-height: 100px;
+            font-size: 16px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .error {
+            background-color: #dc3545;
+        }
+        
+        .success {
+            background-color: #28a745;
+        }
+        
+        .warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 SeeForMe AI Vision</h1>
+        
+        <video id="videoElement" autoplay muted playsinline></video>
+        
+        <div id="status" class="status">
+            Initializing AI vision system...
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startDetection()">Start Detection</button>
+            <button id="stopBtn" onclick="stopDetection()" disabled>Stop Detection</button>
+            <button id="speakBtn" onclick="speakResults()">Speak Results</button>
+        </div>
+        
+        <div id="results" class="detection-results">
+            Ready to detect objects...
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let model = null;
+        let isDetecting = false;
+        let videoElement = null;
+        let detectionInterval = null;
+        let lastDetections = [];
+        let speechSynthesis = window.speechSynthesis;
+        
+        // COCO class names (80 classes)
+        const classNames = [
+            'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+            'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat',
+            'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+            'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+            'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+            'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
+            'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
+            'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
+            'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+        ];
+        
+        // Object priority mapping
+        const objectPriority = {
+            'car': 1, 'truck': 1, 'bus': 1, 'motorcycle': 1, 'train': 1,
+            'traffic light': 1, 'stop sign': 1,
+            'person': 2, 'bicycle': 2, 'dog': 2, 'cat': 2,
+            'chair': 3, 'table': 3, 'couch': 3, 'bed': 3,
+            'bottle': 4, 'cup': 4, 'book': 4, 'tv': 4
+        };
+        
+        // Initialize the application
+        async function init() {
+            try {
+                updateStatus('Loading AI model...', 'warning');
+                
+                // Load TensorFlow.js model (placeholder - you'll need to convert YOLO to TF.js)
+                // For now, we'll simulate model loading
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                updateStatus('Setting up camera...', 'warning');
+                await setupCamera();
+                
+                updateStatus('✅ AI Vision Ready!', 'success');
+                document.getElementById('startBtn').disabled = false;
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                updateStatus('❌ Initialization failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Setup camera access
+        async function setupCamera() {
+            try {
+                videoElement = document.getElementById('videoElement');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        width: 320, 
+                        height: 240,
+                        facingMode: 'environment' // Use back camera
+                    }
+                });
+                
+                videoElement.srcObject = stream;
+                
+                return new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        resolve();
+                    };
+                });
+                
+            } catch (error) {
+                throw new Error('Camera access denied or not available');
+            }
+        }
+        
+        // Start object detection
+        function startDetection() {
+            if (!videoElement) {
+                updateStatus('❌ Camera not ready', 'error');
+                return;
+            }
+            
+            isDetecting = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            updateStatus('🔍 Detecting objects...', 'success');
+            
+            // Start detection loop (every 1 second for demo)
+            detectionInterval = setInterval(detectObjects, 1000);
+        }
+        
+        // Stop object detection
+        function stopDetection() {
+            isDetecting = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+            
+            updateStatus('✋ Detection stopped', '');
+            updateResults('Detection paused');
+        }
+        
+        // Simulate object detection (replace with actual TF.js inference)
+        async function detectObjects() {
+            if (!isDetecting || !videoElement) return;
+            
+            try {
+                // Simulate detection results
+                const simulatedDetections = generateSimulatedDetections();
+                
+                if (simulatedDetections.length > 0) {
+                    lastDetections = simulatedDetections;
+                    displayDetections(simulatedDetections);
+                    announceDetections(simulatedDetections);
+                } else {
+                    updateResults('✅ Clear path ahead');
+                }
+                
+            } catch (error) {
+                console.error('Detection error:', error);
+                updateStatus('⚠️ Detection error', 'error');
+            }
+        }
+        
+        // Generate simulated detection results for demo
+        function generateSimulatedDetections() {
+            const possibleObjects = ['person', 'chair', 'car', 'bottle', 'dog', 'table'];
+            const detections = [];
+            
+            // Randomly generate 0-3 detections
+            const numDetections = Math.floor(Math.random() * 4);
+            
+            for (let i = 0; i < numDetections; i++) {
+                const randomObject = possibleObjects[Math.floor(Math.random() * possibleObjects.length)];
+                const confidence = 0.6 + Math.random() * 0.4; // 60-100% confidence
+                const x = Math.random(); // 0-1 relative position
+                const size = 0.1 + Math.random() * 0.5; // Relative size
+                
+                detections.push({
+                    label: randomObject,
+                    confidence: confidence,
+                    x: x,
+                    size: size,
+                    distance: getDistanceDescription(size),
+                    direction: getDirectionDescription(x)
+                });
+            }
+            
+            // Sort by priority and size
+            detections.sort((a, b) => {
+                const priorityA = objectPriority[a.label] || 5;
+                const priorityB = objectPriority[b.label] || 5;
+                
+                if (priorityA !== priorityB) {
+                    return priorityA - priorityB;
+                }
+                return b.size - a.size;
+            });
+            
+            return detections;
+        }
+        
+        // Display detection results
+        function displayDetections(detections) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (detections.length === 0) {
+                resultsDiv.innerHTML = '✅ Clear path ahead';
+                return;
+            }
+            
+            let html = '<strong>🎯 Detected Objects:</strong><br><br>';
+            
+            detections.forEach((detection, index) => {
+                const priority = objectPriority[detection.label] || 5;
+                const emoji = priority <= 2 ? '⚠️' : priority <= 3 ? '📍' : 'ℹ️';
+                
+                html += `${emoji} <strong>${detection.label}</strong><br>`;
+                html += `&nbsp;&nbsp;&nbsp;${detection.distance} ${detection.direction}<br>`;
+                html += `&nbsp;&nbsp;&nbsp;Confidence: ${Math.round(detection.confidence * 100)}%<br><br>`;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Announce detections via speech
+        function announceDetections(detections) {
+            if (!detections || detections.length === 0) return;
+            
+            // Announce only the most important detection to avoid overwhelming
+            const mostImportant = detections[0];
+            const priority = objectPriority[mostImportant.label] || 5;
+            
+            let announcement = '';
+            
+            if (priority <= 2) {
+                announcement = `Warning! ${mostImportant.label} ${mostImportant.distance} ${mostImportant.direction}`;
+            } else {
+                announcement = `${mostImportant.label} ${mostImportant.distance} ${mostImportant.direction}`;
+            }
+            
+            speak(announcement);
+        }
+        
+        // Text-to-speech function
+        function speak(text) {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        // Speak current results
+        function speakResults() {
+            if (lastDetections.length === 0) {
+                speak('No objects detected. Path is clear.');
+                return;
+            }
+            
+            let announcement = `Detected ${lastDetections.length} object${lastDetections.length > 1 ? 's' : ''}. `;
+            
+            lastDetections.slice(0, 3).forEach((detection, index) => {
+                if (index > 0) announcement += '. ';
+                announcement += `${detection.label} ${detection.distance} ${detection.direction}`;
+            });
+            
+            if (lastDetections.length > 3) {
+                announcement += `. And ${lastDetections.length - 3} more objects.`;
+            }
+            
+            speak(announcement);
+        }
+        
+        // Get distance description based on relative size
+        function getDistanceDescription(relativeSize) {
+            if (relativeSize > 0.4) return 'very close to you';
+            if (relativeSize > 0.25) return 'close by';
+            if (relativeSize > 0.15) return 'a few steps ahead';
+            return 'in the distance';
+        }
+        
+        // Get direction description based on x position
+        function getDirectionDescription(x) {
+            if (x < 0.25) return 'to your far left';
+            if (x < 0.45) return 'to your left';
+            if (x < 0.55) return 'directly ahead';
+            if (x < 0.75) return 'to your right';
+            return 'to your far right';
+        }
+        
+        // Update status display
+        function updateStatus(message, type = '') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+        
+        // Update results display
+        function updateResults(message) {
+            document.getElementById('results').innerHTML = message;
+        }
+        
+        // Android interface functions (for WebView integration)
+        window.androidInterface = {
+            startDetection: startDetection,
+            stopDetection: stopDetection,
+            speakResults: speakResults,
+            getLastDetections: () => lastDetections
+        };
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+        
+        // Handle visibility change (pause when tab/app not visible)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isDetecting) {
+                stopDetection();
+            }
+        });
+    </script>
+</body>
+</html>
