@@ -24,12 +24,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.shanodh.seeforme.R;
-import com.shanodh.seeforme.MainActivity;
 import com.shanodh.seeforme.ml.ObjectDetectionManager;
 import com.shanodh.seeforme.ml.Detection;
+import com.shanodh.seeforme.ui.DetectionOverlayView;
 import com.shanodh.seeforme.utils.ImageUtils;
 
 import java.util.List;
@@ -37,17 +36,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class AssistFragment extends Fragment implements ObjectDetectionManager.DetectionCallback {
+public class AssistFragment extends Fragment implements ObjectDetectionManager.NavigationCallback {
     private static final String TAG = "AssistFragment";
     private static final int CAMERA_PERMISSION_REQUEST = 100;
     
     // UI Components
     private PreviewView viewFinder;
+    private DetectionOverlayView detectionOverlay;
     private TextView detectionResults;
     private TextView statusText;
     private MaterialButton toggleAssistButton;
-    private MaterialButton speakButton;
-    private FloatingActionButton fabVoiceCommand;
     
     // Camera and ML
     private ProcessCameraProvider cameraProvider;
@@ -70,11 +68,10 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
         
         // Initialize views
         viewFinder = view.findViewById(R.id.viewFinder);
+        detectionOverlay = view.findViewById(R.id.detectionOverlay);
         detectionResults = view.findViewById(R.id.detectionResults);
         statusText = view.findViewById(R.id.statusText);
         toggleAssistButton = view.findViewById(R.id.toggleAssistButton);
-        speakButton = view.findViewById(R.id.speakButton);
-        fabVoiceCommand = view.findViewById(R.id.fabVoiceCommand);
 
         // Initialize executor and detection manager
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -82,11 +79,6 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
         
         // Setup click listeners
         toggleAssistButton.setOnClickListener(v -> toggleAssistance());
-        speakButton.setOnClickListener(v -> 
-            ((MainActivity) requireActivity()).startVoiceRecognition());
-            
-        fabVoiceCommand.setOnClickListener(v -> 
-            ((MainActivity) requireActivity()).startVoiceRecognition());
 
         // Initialize ML model and camera independently
         initializeModel();
@@ -191,7 +183,7 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
                     // Convert ImageProxy to Bitmap and run detection
                     Bitmap bitmap = imageProxyToBitmap(image);
                     if (bitmap != null) {
-                        detectionManager.detectObjects(bitmap, AssistFragment.this);
+                        detectionManager.analyzeEnvironment(bitmap, AssistFragment.this);
                     }
                 }
                 image.close();
@@ -237,13 +229,19 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
             toggleAssistButton.setText("Start Assistance");
             statusText.setText("✋ Ready to assist - Tap to start");
             detectionResults.setText("Detection paused");
+            
+            // Clear overlay when stopping assistance
+            if (detectionOverlay != null) {
+                detectionOverlay.clearDetections();
+            }
+            
             Log.d(TAG, "Object detection stopped");
         }
     }
 
-    // ObjectDetectionManager.DetectionCallback implementation
+    // ObjectDetectionManager.NavigationCallback implementation
     @Override
-    public void onDetectionResult(List<Detection> detections) {
+    public void onNavigationUpdate(List<Detection> safetyAlerts) {
         // Check if fragment is still attached before updating UI
         if (!isAdded() || getActivity() == null) {
             Log.w(TAG, "Fragment not attached, skipping UI update");
@@ -256,45 +254,75 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
                 return;
             }
             
-            if (detections.isEmpty()) {
+            // Update overlay with bounding boxes
+            if (detectionOverlay != null) {
+                detectionOverlay.updateDetections(safetyAlerts);
+            }
+            
+            if (safetyAlerts.isEmpty()) {
                 detectionResults.setText("✅ Clear path ahead");
             } else {
                 StringBuilder result = new StringBuilder();
                 result.append("🎯 Detected: ");
                 
-                for (int i = 0; i < Math.min(3, detections.size()); i++) {
-                    Detection detection = detections.get(i);
+                for (int i = 0; i < Math.min(3, safetyAlerts.size()); i++) {
+                    Detection detection = safetyAlerts.get(i);
                     if (i > 0) result.append(", ");
                     result.append(detection.getLabel());
                     result.append(String.format(" (%.0f%%)", detection.getConfidence() * 100));
                 }
                 
-                if (detections.size() > 3) {
-                    result.append(String.format(" + %d more", detections.size() - 3));
+                if (safetyAlerts.size() > 3) {
+                    result.append(String.format(" + %d more", safetyAlerts.size() - 3));
                 }
                 
                 detectionResults.setText(result.toString());
             }
             
-            statusText.setText("🔍 Scanning... " + detections.size() + " objects found");
+            statusText.setText("🔍 Scanning... " + safetyAlerts.size() + " objects found");
         });
     }
 
     @Override
-    public void onError(String error) {
+    public void onHazardDetected(Detection hazard) {
         // Check if fragment is still attached before updating UI
         if (!isAdded() || getActivity() == null) {
-            Log.w(TAG, "Fragment not attached, skipping error UI update");
+            Log.w(TAG, "Fragment not attached, skipping hazard UI update");
             return;
         }
         
         getActivity().runOnUiThread(() -> {
-            // Double check in UI thread
-            if (!isAdded() || getActivity() == null) {
+            if (!isAdded() || getActivity() == null || !isAssisting) {
                 return;
             }
-            statusText.setText("⚠️ Detection error: " + error);
-            Log.e(TAG, "Detection error: " + error);
+            
+            String hazardText = "⚠️ DANGER: " + hazard.getLabel() + 
+                               String.format(" (%.0f%%)", hazard.getConfidence() * 100);
+            detectionResults.setText(hazardText);
+            statusText.setText("⚠️ Immediate hazard detected!");
+        });
+    }
+
+    @Override
+    public void onPathClear() {
+        // Check if fragment is still attached before updating UI
+        if (!isAdded() || getActivity() == null) {
+            Log.w(TAG, "Fragment not attached, skipping clear path UI update");
+            return;
+        }
+        
+        getActivity().runOnUiThread(() -> {
+            if (!isAdded() || getActivity() == null || !isAssisting) {
+                return;
+            }
+            
+            // Clear overlay when no objects detected
+            if (detectionOverlay != null) {
+                detectionOverlay.clearDetections();
+            }
+            
+            detectionResults.setText("✅ Clear path ahead");
+            statusText.setText("🔍 Scanning... path is clear");
         });
     }
     
@@ -322,7 +350,7 @@ public class AssistFragment extends Fragment implements ObjectDetectionManager.D
         }
         
         if (detectionManager != null) {
-            detectionManager.cleanup();
+            detectionManager.shutdown();
         }
         
         if (cameraProvider != null) {

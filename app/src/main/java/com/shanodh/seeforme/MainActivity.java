@@ -29,7 +29,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.shanodh.seeforme.auth.FirebaseAuthManager;
 import com.shanodh.seeforme.firebase.FirestoreNotesManager;
-import com.shanodh.seeforme.ui.fragments.AssistFragment;
+import com.shanodh.seeforme.ui.fragments.SimpleAssistFragment;
 import com.shanodh.seeforme.ui.fragments.HomeFragment;
 import com.shanodh.seeforme.ui.fragments.ProfileFragment;
 import com.shanodh.seeforme.ui.AddNoteActivity;
@@ -275,8 +275,8 @@ public class MainActivity extends AppCompatActivity implements
             Fragment childFragment = currentFragment.getChildFragmentManager().getFragments().get(0);
             if (childFragment instanceof HomeFragment) {
                 ((HomeFragment) childFragment).updateStatus(status);
-            } else if (childFragment instanceof AssistFragment) {
-                ((AssistFragment) childFragment).updateStatus(status);
+            } else if (childFragment instanceof SimpleAssistFragment) {
+                ((SimpleAssistFragment) childFragment).updateStatus(status);
             } else if (childFragment instanceof ProfileFragment) {
                 ((ProfileFragment) childFragment).updateStatus(status);
             }
