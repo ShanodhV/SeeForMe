@@ -11,7 +11,7 @@
 
     <fragment
         android:id="@+id/navigation_assist"
-        android:name="com.shanodh.seeforme.ui.fragments.AssistFragment"
+        android:name="com.shanodh.seeforme.ui.fragments.SimpleAssistFragment"
         android:label="Assist" />
 
     <fragment
